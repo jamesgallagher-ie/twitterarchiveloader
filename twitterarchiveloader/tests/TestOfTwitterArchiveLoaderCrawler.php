@@ -40,7 +40,7 @@ class TestOfTwitterArchiveLoaderCrawler extends ThinkUpUnitTestCase {
     /**
      * @var logger
      */
-    var logger;
+    var $logger;
 
     public function setUp() {
         parent::setUp();

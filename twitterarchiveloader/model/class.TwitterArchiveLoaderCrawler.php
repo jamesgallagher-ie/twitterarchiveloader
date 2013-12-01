@@ -42,10 +42,6 @@ class TwitterArchiveLoaderCrawler {
      */
     var $logger;
     /**
-     * @var str
-     */
-    var $access_token;
-    /**
      *
      * @var TwitterArchiveLoaderAPIAccessor
      */
@@ -55,28 +51,60 @@ class TwitterArchiveLoaderCrawler {
      * @param Instance $instance
      * @return $1Crawler
      */
-    public function __construct($instance, $access_token) {
+    public function __construct($instance) {
         $this->instance = $instance;
         $this->logger = Logger::getInstance();
-        $this->access_token = $access_token;
-        $this->api_accessor = new TwitterArchiveLoaderAPIAccessor();
+        $this->api_accessor = new TwitterArchiveLoaderAPIAccessor($instance);
         $this->logger->setUsername($instance->network_username);
         $this->user_dao = DAOFactory::getDAO('UserDAO');
         $plugin_option_dao = DAOFactory::GetDAO('PluginOptionDAO');
         $this->twitter_options = $plugin_option_dao->getOptionsHash('twitterarchiveloader');
+        $this->last_tweets_files_processed;
     }
     
     
     public function moreData() {
-    	/* get a TwitterArchiveLoaderAPIAccessor instance
-    	 * call queryDataForInstance
-    	 * call unprocessedFileExists
-    	 * return true/false
-    	 */
+    	if(count($this->api_accessor->list_of_json_files) > 0) {
+    		return true;
+    	}
+    	else {
+	    	if($this->api_accessor->queryDataForInstance()) {
+    			return true;
+    		}
+    		else {
+    			return false;
+    		}
+    	}
     }
     
     public function fetchUserTweets() {
-    	/* get the JSON objects */
+    	$json = array();
+    	$filename = $this->api_accessor->list_of_json_files[0];
+    	if(is_file($filename) && is_readable($filename)) {
+    		$filecontents = file_get_contents($filename);
+    		preg_match('/\[.*\]/s', $filecontents, $matches);
+    		if(count($matches) > 0) {
+    			$json = JSONDecoder::decode($matches[0], true);
+    			$this->last_tweets_file_processed = $filename;
+    		}
+    	}
+    	else {
+    		// we have an error
+    	}
+    	return $json;
+    }
+    
+    public function setLastTweetsFileProcessedStatus($status) {
+    	if($status) {
+    		$this->api_accessor->setFileToProcessed($this->last_tweets_file_processed);
+    		// now remove this file from the list of json files
+    		for($i = 0; $i <= count($this->api_accessor->list_of_json_files); $i++) {
+    			if($this->api_accessor->list_of_json_files[$i] == $this->last_tweets_file_processed) {
+    				unset($this->api_accessor->list_of_json_files[$i]);
+    				$this->api_accessor->list_of_json_files = array_values($this->api_accessor->list_of_json_files);
+    			}
+    		}
+    	}
     }
 
 

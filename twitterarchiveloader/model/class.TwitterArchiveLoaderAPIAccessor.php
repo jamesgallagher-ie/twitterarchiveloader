@@ -33,37 +33,138 @@
 class TwitterArchiveLoaderAPIAccessor{
 
 	/* Need to create a constructor */
+	public function __construct($instance) {
+		$this->instance = $instance;
+		$this->logger = Logger::getInstance();
+		$this->logger->setUsername($instance->network_username);
+		$this->archive_zip_location = Config::getInstance()->getValue('datadir_path') . 'twitterarchiveloader' . $instance->network_username;
+		$this->list_of_json_files = array();		
+	}
 
 	
-    public function queryDataForInstance($instance) {
+    public function queryDataForInstance() {
     	/* The upload form stores uploaded files under THINKUP_CFG['datadir_path']/twitterarchiveloader/{username}
     	If the directory {username} doesn't exist under THINKUP_CFG['datadir_path']/twitterarchiveloader/ then
-    	there's no data*/
+    	there's likely no data*/
     	// check for the directory
-    	// check for the zip file
-    	// check if the zip file has been extracted
-    	// search for files YYYY_MM.js
-
-    	// return true/false
+    	if(!is_dir($this->archive_zip_location)) {
+    		return false;
+    	}
+    	// check for the zip file - ideally it will be called tweets.zip. If it has already been processed then it will be tweets.zip.processed
+    	if(!(file_exists($this->archive_zip_location."tweets.zip") || file_exists($this->archive_zip_location."tweets.zip.processed"))) {
+    		// search for zip files
+    		$zipfiles = glob($this->archive_zip_location."*.zip");
+    		if(count($zipfiles) = 0) {
+    			return false;
+    		}
+    		else {
+    			if(!searchZipFilesForJSON($zipfiles)) {
+    				return false;
+    			}
+    		}
+    		return false;
+    	}
+    	else {
+    		// We have a tweets.zip or tweets.zip.processed, check which
+    		if(file_exists($this->archive_zip_location."tweets.zip.processed")) {
+    			// a previous run has already processed this archive, so look for the extracted files under 'tweets' (from extractFilesFromArchive())
+    			if(is_dir($this->archive_zip_location . "tweets/")) {
+    				$files = array();
+    				$files = findJSONTweetsFile($this->archive_zip_location . "tweets/");
+    				if(count($files) > 0) {
+    					$this->list_of_json_files = $files;
+    					return true;
+    				}
+    				
+    			} else {
+    				if(rename($this->archive_zip_location."tweets.zip.processed", $this->archive_zip_location."tweets.zip")) {
+    					queryDataForInstance($instance);
+    				}
+    			}
+    			
+    		}
+    		elseif(file_exists($this->archive_zip_location."tweets.zip")) {
+    			// a zip file just waiting to be processed!
+    		    // Extract the files which match the pattern YYYY_MM.js
+    		    	$tweetFiles = searchZipFilesForJSON($this->archive_zip_location."tweets.zip");
+    		    	if(count($tweetFiles) > 0) {
+    		    		if(extractFilesFromArchive($tweetFiles)) {
+    		    			$this->list_of_json_files = $tweetFiles;
+    		    			setFileToProcessed($this->archive_zip_location."tweets.zip");
+    		    			return true;
+    		    		}
+    		    		else {
+    		    			return false;
+    		    		}
+    		    	}
+    		}
+    		else {
+    			// something has gone quite wrong
+    			return false;
+    		}
+    	}
     }
     
-    public function unprocessedFileExists($instance) {
-    	/* files which have a corresponding YYYY_MM.js.processed have already been processed */
-    	// find files YYYY_MM.js which don't have a corresponding YYYY_MM.js.processed
-    	
-    	// return a file which needs to be processed
-    }
-    
-    public function getJSONForFile($filename) {
+    public function getJSONForFiles() {
     	/* Read the file and decode to JSON */
     	
     	// return array of JSON objects
     }
     
+	public function findJSONTweetsFile($path) {
+		// given a path, search it for YYYY_MM.js files
+	   $pattern = '/20[0-9]{2}_[0-9]{2}\.js$/';
+	   $matchingFiles = array();
+	   $directoryEntities = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
+	   foreach ($directoryEntities as $name) {
+	   	$result = preg_match($pattern, $name);
+	   	if($result == 1 && is_file($name)) {
+	   		$matchingFiles[] = $name;
+	   	}
+	   }
+	   return $matchingFiles;	 
+	}
+    
+    
+    
     public function setFileToProcessed($filename) {
-    	/* when the file has successfully processed create a $filename.processed file */
-    	// create empty $filename.processed file
+    	/* when the file has successfully processed mv filename to $filename.processed file */
+    	if(rename($filename, $filename . ".processed")) {
+    		return true;
+    	}
+    	else {
+    		return false;
+    	}
     }
+        
+    public function searchZipForJSONFiles($zipfile) {
+    	// go through the zip archive and look for files matching the pattern YYYY_MM.js then return an array of matching filenames
+    	$zip = new ZipArchive;
+    	$matchingFiles = array();
+    	if($zip->open($this->archive_path . $this->archive_file_name)) {
+    		for ($i = 0; $i < $zip->numFiles; $i++) {
+    			$filename = $zip->getNameIndex($i);
+    			$pattern = '/20[0-9]{2}_[0-9]{2}\.js$/';
+    			$result = preg_match($pattern, $filename);
+    			if($result == 1) {
+    				$matchingFiles[] = $filename;
+    			}
+    		}
+    	}
+    	return $matchingFiles;
+    }
+    
+	public function extractFilesFromArchive($matchingFiles) {
+		$zip = new ZipArchive;
+		if($zip->open($this->archive_path . $this->archive_file_name)) {
+				$zip->extractTo("./tweets/", $matchingFiles);
+			$zip->close();
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
  
 
 }
