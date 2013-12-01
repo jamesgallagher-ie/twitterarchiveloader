@@ -32,7 +32,7 @@
 
 class TwitterArchiveLoaderAPIAccessor{
 
-	/* Need to create a constructor */
+
 	public function __construct($instance) {
 		$this->instance = $instance;
 		$this->logger = Logger::getInstance();
@@ -105,11 +105,6 @@ class TwitterArchiveLoaderAPIAccessor{
     	}
     }
     
-    public function getJSONForFiles() {
-    	/* Read the file and decode to JSON */
-    	
-    	// return array of JSON objects
-    }
     
 	public function findJSONTweetsFile($path) {
 		// given a path, search it for YYYY_MM.js files
