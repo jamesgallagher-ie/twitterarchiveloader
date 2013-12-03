@@ -35,6 +35,7 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     public function __construct($vals=null) {
         parent::__construct($vals);
         $this->folder_name = 'twitterarchiveloader';
+        
     }
 
     public function activate() {
@@ -55,6 +56,9 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     	$config = Config::getInstance();
     	$logger = Logger::getInstance();
     	$instance_dao = DAOFactory::getDAO('TwitterInstanceDAO');
+    	$owner_instance_dao = DAOFactory::getDAO('OwnerInstanceDAO');
+    	$plugin_option_dao = DAOFactory::GetDAO('PluginOptionDAO');
+    	$options = $plugin_option_dao->getOptionsHash('twitter', true);
     	
     	$instances = $instance_dao->getAllInstances();
     	foreach ($instances as $instance) {
@@ -62,17 +66,28 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     			$logger->setUsername($instance->network_username);
     			$logger->logUserSuccess("Starting to collect data for ".$instance->network_username." from Twitter Archive Loader.",
     					__METHOD__.','.__LINE__);
-    			// get the tweet ids already loaded for this instance
-    			
-    			// Is there data for this instance?
-    			$crawler = new TwitterArchiveLoaderCrawler($instance);
-    			while($crawler->moreData()) {
-    				$usertweets = $crawler->fetchUserTweets();
-    				foreach ($usertweets as $usertweet) {
-    					/* try to convert the data to a post
-    					 * Check if the tweet id already exists, if it does then skip, if not then insert it
-    					 */ 
-    				}
+    			// use the existing Twitter plugin functionality for converting JSON data to true tweets; the way I've implemented this doesn't make me proud :)
+    			$tokens = $owner_instance_dao->getOAuthTokens($instance->id);
+    			$oauth_token = $tokens['oauth_access_token'];
+    			$oauth_token_secret = $tokens['oauth_access_token_secret'];
+    			$oauth_consumer_key = $options['oauth_consumer_key']->option_value;
+    			$oauth_consumer_secret = $options['oauth_consumer_secret']->option_value;
+    			$archive_limit = $options['archive_limit']->option_value;
+    			$num_twitter_errors = 2;
+    			$api = new CrawlerTwitterAPIAccessorOAuth($oauth_token, $oauth_token_secret, $oauth_consumer_key, $oauth_consumer_secret, $archive_limit, $num_twitter_errors);
+    			$tc = new TwitterCrawler($instance, $api);
+	    		// Is there data for this instance?
+	    		$crawler = new TwitterArchiveLoaderCrawler($instance);
+	    			while($crawler->moreData()) {
+	    				$usertweets = $crawler->fetchUserTweets();
+	    				foreach ($usertweets as $usertweet) {
+	    					$tweets = convertJSONtoTweetArray($usertweet);
+	    					
+	    					/* try to convert the data to a post
+	    					 * Check if the tweet id already exists, if it does then skip, if not then insert it
+	    					 */ 
+	    				}
+	    			}
     			}
     			
     		} catch (Exception $e) {
