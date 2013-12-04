@@ -80,17 +80,36 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 	    		$crawler = new TwitterArchiveLoaderCrawler($instance);
 	    			while($crawler->moreData()) {
 	    				$usertweets = $crawler->fetchUserTweets();
-	    				foreach ($usertweets as $usertweet) {
-	    					$tweets = convertJSONtoTweetArray($usertweet);
-	    					
+	    				$tweets = $api->parseJSONTweets($usertweets);
+	    				$post_dao = DAOFactory::getDAO('PostDAO');
+	    				$new_username = false;
+	    				$count = 0;
+	    				foreach ($tweets as $tweet) {
+	    					$tweet['network'] = 'twitter';
+	    				
+	    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);
+	    					if ( $inserted_post_key !== false) {
+	    						$count = $count + 1;
+	    						$this->instance->total_posts_in_system = $this->instance->total_posts_in_system + 1;
+	    						//expand and insert links contained in tweet
+	    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter',
+	    						$this->logger);
+	    					}
+	    					if ($tweet['post_id'] > $this->instance->last_post_id)
+	    						$this->instance->last_post_id = $tweet['post_id'];
+	    				}
+	    				if (count($tweets) > 0 || $count > 0) {
+	    					$status_message .= ' ' . count($tweets)." tweet(s) found and $count saved";
+	    					$this->logger->logUserSuccess($status_message, __METHOD__.','.__LINE__);
+	    					$status_message = "";
+	    				}	
 	    					/* try to convert the data to a post
 	    					 * Check if the tweet id already exists, if it does then skip, if not then insert it
 	    					 */ 
-	    				}
 	    			}
     			}
     			
-    		} catch (Exception $e) {
+    		catch (Exception $e) {
                 $logger->logUserError(get_class($e) ." while crawling ".$instance->network_username." from Twitter Archive loader: ".
                 $e->getMessage(), __METHOD__.','.__LINE__);
             }

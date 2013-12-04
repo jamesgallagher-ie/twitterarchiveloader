@@ -80,6 +80,7 @@ class TwitterArchiveLoaderCrawler {
     public function fetchUserTweets() {
     	$json = array();
     	$filename = $this->api_accessor->list_of_json_files[0];
+    	var_dump($filename);
     	if(is_file($filename) && is_readable($filename)) {
     		$filecontents = file_get_contents($filename);
     		preg_match('/\[.*\]/s', $filecontents, $matches);
