@@ -51,10 +51,14 @@ class TwitterArchiveLoaderCrawler {
      * @param Instance $instance
      * @return $1Crawler
      */
+    
+    var $classname; 
+    
     public function __construct($instance) {
         $this->instance = $instance;
         $this->logger = Logger::getInstance();
         $this->api_accessor = new TwitterArchiveLoaderAPIAccessor($instance);
+        $this->classname = 'TwitterArchiveLoaderCrawler';
         $this->logger->setUsername($instance->network_username);
         $this->user_dao = DAOFactory::getDAO('UserDAO');
         $plugin_option_dao = DAOFactory::GetDAO('PluginOptionDAO');
@@ -64,40 +68,51 @@ class TwitterArchiveLoaderCrawler {
     
     
     public function moreData() {
+    	$this->logger->logUserInfo("Checking for moreData " . $instance->network_username." from Twitter Archive Loader.",
+    			__METHOD__.','.__LINE__);
+    	//$this->logger->logInfo("Checking for moreData", $this->classname);
+    	$this->logger->logDebug("moreData with " . count($this->api_accessor->list_of_json_files) . " files", $classname);
     	if(count($this->api_accessor->list_of_json_files) > 0) {
     		return true;
     	}
     	else {
 	    	if($this->api_accessor->queryDataForInstance()) {
+	    		$this->logger->logInfo("Calling queryDataForInstance to check if there are files available", $this->classname);
     			return true;
     		}
     		else {
+    			$this->logger->logInfo("No more data available", $this->classname);
     			return false;
     		}
     	}
     }
     
     public function fetchUserTweets() {
+    	$this->logger->logInfo("Executing fetchUserTweets", $this->classname);
     	$json = array();
     	$filename = $this->api_accessor->list_of_json_files[0];
-    	var_dump($filename);
+    	$this->logger->logDebug("fetchUserTweets with: " . $filename, $this->classname);
     	if(is_file($filename) && is_readable($filename)) {
     		$filecontents = file_get_contents($filename);
     		preg_match('/\[.*\]/s', $filecontents, $matches);
     		if(count($matches) > 0) {
-    			$json = JSONDecoder::decode($matches[0], true);
+    			$this->logger->logDebug("fetchUserTweets with: " . $filename, $this->classname);
+    			$json = $matches[0];
     			$this->last_tweets_file_processed = $filename;
+    			$this->logger->logDebug("fetchUserTweets " . $json, $this->classname);
     		}
     	}
     	else {
-    		// we have an error
+
     	}
     	return $json;
     }
     
     public function setLastTweetsFileProcessedStatus($status) {
+    	$this->logger->logInfo("Executing setLastTweetsFileProcessedStatus", $this->classname);
     	if($status) {
     		$this->api_accessor->setFileToProcessed($this->last_tweets_file_processed);
+    		$this->logger->logInfo("Last file processed is: " . $this->last_tweets_file_processed, $this->classname);
     		// now remove this file from the list of json files
     		for($i = 0; $i <= count($this->api_accessor->list_of_json_files); $i++) {
     			if($this->api_accessor->list_of_json_files[$i] == $this->last_tweets_file_processed) {

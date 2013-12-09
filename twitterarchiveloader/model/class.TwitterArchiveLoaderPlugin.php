@@ -35,6 +35,8 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     public function __construct($vals=null) {
         parent::__construct($vals);
         $this->folder_name = 'twitterarchiveloader';
+        $this->instance;
+        $this->classname = 'TwitterArchiveLoaderPlugin';
         
     }
 
@@ -62,6 +64,7 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     	
     	$instances = $instance_dao->getAllInstances();
     	foreach ($instances as $instance) {
+    		$this->instance = $instance;
     		try {
     			$logger->setUsername($instance->network_username);
     			$logger->logUserSuccess("Starting to collect data for ".$instance->network_username." from Twitter Archive Loader.",
@@ -73,39 +76,52 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
     			$oauth_consumer_key = $options['oauth_consumer_key']->option_value;
     			$oauth_consumer_secret = $options['oauth_consumer_secret']->option_value;
     			$archive_limit = $options['archive_limit']->option_value;
-    			$num_twitter_errors = 2;
+    			$num_twitter_errors = 100;
     			$api = new CrawlerTwitterAPIAccessorOAuth($oauth_token, $oauth_token_secret, $oauth_consumer_key, $oauth_consumer_secret, $archive_limit, $num_twitter_errors);
     			$tc = new TwitterCrawler($instance, $api);
 	    		// Is there data for this instance?
 	    		$crawler = new TwitterArchiveLoaderCrawler($instance);
 	    			while($crawler->moreData()) {
-	    				$usertweets = $crawler->fetchUserTweets();
+	    				
+	    				$fileusertweets = $crawler->fetchUserTweets();
+	    				/* This is a horrible hack to resolve the difference between the key for avatar returned by the Twitter API and
+	    				 * an archive JSON file (profile_image_url_https versus profile_image_url)
+	    				 */
+	    				$logger->logInfo("Back from fetchUserTweets ", "TwitterArchiveLoaderPlugin");
+	    				$search = 'profile_image_url_https';
+	    				$replace = 'profile_image_url';
+	    				$usertweets = str_replace($search, $replace, $fileusertweets);
 	    				$tweets = $api->parseJSONTweets($usertweets);
+	    				$logger->logInfo("Tweets array: " . count($tweets), $this->classname);
+	    				$logger->logInfo("Now have " . count($tweets) . " tweets to process", "TwitterArchiveLoaderPlugin");
 	    				$post_dao = DAOFactory::getDAO('PostDAO');
 	    				$new_username = false;
 	    				$count = 0;
+	    				$forearchcount = 0;
 	    				foreach ($tweets as $tweet) {
+	    					$logger->logInfo($tweet['post_id']. " being processed at loop " . $forearchcount, "TwitterArchiveLoaderPlugin");
 	    					$tweet['network'] = 'twitter';
-	    				
-	    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);
+	    					$forearchcount = $forearchcount + 1;	    				
+	    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);	    					
 	    					if ( $inserted_post_key !== false) {
+	    						$logger->logInfo($tweet['post_id']. " was inserted", "TwitterArchiveLoaderPlugin");
 	    						$count = $count + 1;
 	    						$this->instance->total_posts_in_system = $this->instance->total_posts_in_system + 1;
 	    						//expand and insert links contained in tweet
-	    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter',
-	    						$this->logger);
+	    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter', $logger);
 	    					}
-	    					if ($tweet['post_id'] > $this->instance->last_post_id)
+	    					if ($tweet['post_id'] > $this->instance->last_post_id) {
+	    						$logger->logInfo($tweet['post_id']. " has become the last_post_id", "TwitterArchiveLoaderPlugin");
 	    						$this->instance->last_post_id = $tweet['post_id'];
+	    					}
 	    				}
+	    				$logger->logInfo("Count tweets is: " . count($tweets) . " and count is: " . $count, "TwitterArchiveLoaderPlugin");
 	    				if (count($tweets) > 0 || $count > 0) {
 	    					$status_message .= ' ' . count($tweets)." tweet(s) found and $count saved";
-	    					$this->logger->logUserSuccess($status_message, __METHOD__.','.__LINE__);
+	    					$logger->logUserSuccess($status_message, __METHOD__.','.__LINE__);
 	    					$status_message = "";
 	    				}	
-	    					/* try to convert the data to a post
-	    					 * Check if the tweet id already exists, if it does then skip, if not then insert it
-	    					 */ 
+	    				$crawler->setLastTweetsFileProcessedStatus(true);
 	    			}
     			}
     			

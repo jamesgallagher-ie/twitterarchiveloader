@@ -68,21 +68,23 @@ class TwitterArchiveLoaderAPIAccessor{
     		return false;
     	}
     	else {
-    		$this->logger->logInfo("Working with an archive file","TwitterArchiveLoaderAPIAccessor");
+    		$this->logger->logInfo("Working with archive file","TwitterArchiveLoaderAPIAccessor");
     		// We have a tweets.zip or tweets.zip.processed, check which
     		if(file_exists($this->archive_zip_location."tweets.zip.processed")) {
     			// a previous run has already processed this archive, so look for the extracted files under 'tweets' (from extractFilesFromArchive())
     			if(is_dir($this->archive_zip_location . "tweets/")) {
-    				$files = array();
+    				//$files = array();
+    				$this->logger->logInfo("Working with an already processed archive file","TwitterArchiveLoaderAPIAccessor");
     				$files = $this->findJSONTweetsFile($this->archive_zip_location . "tweets/");
     				if(count($files) > 0) {
     					$this->list_of_json_files = $files;
+    					//$this->logger->logInfo("files: " . implode("\n", $files),"TwitterArchiveLoaderAPIAccessor");
     					return true;
     				}
     				
     			} else {
     				if(rename($this->archive_zip_location."tweets.zip.processed", $this->archive_zip_location."tweets.zip")) {
-    					$this->queryDataForInstance($instance);
+    					$this->queryDataForInstance($this->instance);
     				}
     			}
     			
@@ -93,8 +95,15 @@ class TwitterArchiveLoaderAPIAccessor{
     		    $this->archive_file_to_process = $this->archive_zip_location."tweets.zip";
     		    	$tweetFiles = $this->searchZipForJSONFiles($this->archive_zip_location."tweets.zip");
     		    	if(count($tweetFiles) > 0) {
+    		    		$this->logger->logDebug("There are " . count($tweetFiles) . " files to process", "TwitterArchiveLoaderAPIAccessor");
     		    		if($this->extractFilesFromArchive($tweetFiles)) {
-    		    			$this->list_of_json_files = $tweetFiles;
+    		    			// Need to get the full path to the files for later use
+    		    			$tweetFilesWithFullPath = array();
+    		    			foreach ($tweetFiles as $tweetfile) {
+    		    				$tweetFilesWithFullPath[] = $this->archive_zip_location . "tweets/" . $tweetfile;
+    		    			}
+    		    			$this->list_of_json_files = $tweetFilesWithFullPath;
+    		    			$this->logger->logDebug("Extracted files from archive", "TwitterArchiveLoaderAPIAccessor");
     		    			$this->setFileToProcessed($this->archive_zip_location."tweets.zip");
     		    			return true;
     		    		}
@@ -122,6 +131,7 @@ class TwitterArchiveLoaderAPIAccessor{
 	   		$matchingFiles[] = $name;
 	   	}
 	   }
+	   //var_dump($matchingFiles);
 	   return $matchingFiles;	 
 	}
     
