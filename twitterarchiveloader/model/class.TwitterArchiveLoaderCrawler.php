@@ -70,7 +70,6 @@ class TwitterArchiveLoaderCrawler {
     public function moreData() {
     	$this->logger->logUserInfo("Checking for moreData " . $instance->network_username." from Twitter Archive Loader.",
     			__METHOD__.','.__LINE__);
-    	//$this->logger->logInfo("Checking for moreData", $this->classname);
     	$this->logger->logDebug("moreData with " . count($this->api_accessor->list_of_json_files) . " files", $classname);
     	if(count($this->api_accessor->list_of_json_files) > 0) {
     		return true;
