@@ -21,7 +21,7 @@
  *
  * TwitterArchiveLoader (name of file)
  *
- * Description of what this class does
+ * Loads the configuration for the standalone plugin; Twitter Archive Loader.
  *
  * Copyright (c) 2013 James Gallagher
  *
