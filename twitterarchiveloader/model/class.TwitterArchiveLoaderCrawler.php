@@ -58,7 +58,6 @@ class TwitterArchiveLoaderCrawler {
         $this->instance = $instance;
         $this->logger = Logger::getInstance();
         $this->api_accessor = new TwitterArchiveLoaderAPIAccessor($instance);
-        $this->classname = 'TwitterArchiveLoaderCrawler';
         $this->logger->setUsername($instance->network_username);
         $this->user_dao = DAOFactory::getDAO('UserDAO');
         $plugin_option_dao = DAOFactory::GetDAO('PluginOptionDAO');

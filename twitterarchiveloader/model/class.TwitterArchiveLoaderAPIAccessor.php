@@ -124,7 +124,7 @@ class TwitterArchiveLoaderAPIAccessor{
 	public function findJSONTweetsFile($path) {
 		// given a path, search it for YYYY_MM.js files
 		$this->logger->logDebug("Looking for files containing JSON tweets at " . $path, __CLASS__ . "." . __FUNCTION__);
-	   $pattern = '/20[0-9]{2}_[0-9]{2}\.js$/';
+	   $pattern = '/\/20[0-9]{2}_[0-9]{2}\.js$/';
 	   $matchingFiles = array();
 	   $directoryEntities = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
 	   foreach ($directoryEntities as $name) {
