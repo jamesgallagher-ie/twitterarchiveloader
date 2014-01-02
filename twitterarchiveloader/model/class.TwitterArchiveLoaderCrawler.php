@@ -85,7 +85,7 @@ class TwitterArchiveLoaderCrawler {
     	}
     }
     
-    public function fetchUserTweets() {
+    public function fetchUserArchiveTweets() {
     	$this->logger->logDebug("Executing fetchUserTweets", __CLASS__ . "." . __FUNCTION__);
     	$json = array();
     	$filename = $this->api_accessor->list_of_json_files[0];
