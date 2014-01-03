@@ -91,8 +91,8 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 	    				$replace = 'profile_image_url';
 	    				$usertweets = str_replace($search, $replace, $fileusertweets);
 	    				$tweets = $api->parseJSONTweets($usertweets);
-	    				$logger->logDebug("Tweets array: " . count($tweets), __CLASS__ . "." . __FUNCTION__);
-	    				$logger->logDebug("Now have " . count($tweets) . " tweets to process", __CLASS__ . "." . __FUNCTION__);
+	    				$logger->logDebug("Tweets array: " . count($tweets), __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
+	    				$logger->logDebug("Now have " . count($tweets) . " tweets to process", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
 	    				$post_dao = DAOFactory::getDAO('PostDAO');
 	    				$new_username = false;
 	    				$forearchcount = 0;
@@ -105,18 +105,18 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 		    					$forearchcount = $forearchcount + 1;	    				
 		    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);	    					
 		    					if ( $inserted_post_key !== false) {
-		    						$logger->logInfo($tweet['post_id']. " was inserted", __CLASS__ . "." . __FUNCTION__);
+		    						$logger->logInfo($tweet['post_id']. " was inserted", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
 		    						$this->instance->total_posts_in_system = $this->instance->total_posts_in_system + 1;
 		    						//expand and insert links contained in tweet
 		    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter', $logger);
 		    					}
 		    					if ($tweet['post_id'] > $this->instance->last_post_id) {
-		    						$logger->logInfo($tweet['post_id']. " has become the last_post_id", __CLASS__ . "." . __FUNCTION__);
+		    						$logger->logInfo($tweet['post_id']. " has become the last_post_id", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
 		    						$this->instance->last_post_id = $tweet['post_id'];
 		    					}
 	    					}
 	    					else {
-	    						$logger->logInfo("This tweet doesn't belong to this user " . $tweet['post_id'], __CLASS__ . "." . __FUNCTION__);
+	    						$logger->logInfo("This tweet doesn't belong to this user " . $tweet['post_id'], __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
 	    					}
 	    				}
 	    				$crawler->setLastTweetsFileProcessedStatus(true);
