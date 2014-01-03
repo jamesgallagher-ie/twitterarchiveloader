@@ -97,7 +97,6 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 	    				$new_username = false;
 	    				$forearchcount = 0;
 	    				foreach ($tweets as $tweet) {
-	    					var_dump($tweet);
 	    					$logger->logInfo($tweet['post_id']. " being processed at loop " . $forearchcount, "TwitterArchiveLoaderPlugin");
 	    					$tweet['network'] = 'twitter';
 	    					// check if the tweet belongs to the instance user, that is; the id on the tweet is the same as the instance id

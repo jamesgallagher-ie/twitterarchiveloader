@@ -62,6 +62,11 @@ class TwitterArchiveLoaderAPIAccessor{
     			$this->list_of_json_files = $files;
     			return true;
     		}
+    		else {
+    			// If there are no eligible files under tweets/ then mark the directory as processed
+    			$this->logger->logDebug("Setting tweets/ to processed ", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
+    			$this->setFileToProcessed($this->archive_zip_location . "tweets");
+    		}
     	}
     	else {
     		$this->logger->logDebug("Don't have existing tweets/ ", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
@@ -127,18 +132,19 @@ class TwitterArchiveLoaderAPIAccessor{
 
     public function setFileToProcessed($filename) {
     	$this->logger->logDebug("Setting file to processed: " . $filename, __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
-    	/* when the file has successfully processed mv filename to $filename.processed */
+    	/* when the file has successfully processed mv filename to $filename.processed.timsetamp */
     	$this->setFileStatus($filename, ".processed");
     }
     
     public function setFileToBad($filename) {
     	$this->logger->logDebug("Setting file to bad: " . $filename, __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
-    	/* when the file has successfully processed mv filename to $filename.bad */
+    	/* when the file has successfully processed mv filename to $filename.bad.timestamp */
     	$this->setFileStatus($filename, ".bad");
     }
     
     public function setFileStatus($filename, $status) {
-    	if(rename($filename, $filename . $status)) {
+    	$timestamp = date("YmdHis");
+    	if(rename($filename, $filename . $status . "." . $timestamp)) {
     		return true;
     	}
     	else {
