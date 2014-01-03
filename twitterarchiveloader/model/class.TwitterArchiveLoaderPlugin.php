@@ -83,11 +83,10 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 	    		$crawler = new TwitterArchiveLoaderCrawler($instance);
 	    			while($crawler->moreData()) {
 	    				
-	    				$fileusertweets = $crawler->fetchUserTweets();
+	    				$fileusertweets = $crawler->fetchUserArchiveTweets();
 	    				/* This is a horrible hack to resolve the difference between the key for avatar returned by the Twitter API and
 	    				 * an archive JSON file (profile_image_url_https versus profile_image_url)
 	    				 */
-	    				$logger->logDebug("Back from fetchUserTweets ", __CLASS__ . "." . __FUNCTION__);
 	    				$search = 'profile_image_url_https';
 	    				$replace = 'profile_image_url';
 	    				$usertweets = str_replace($search, $replace, $fileusertweets);
@@ -96,31 +95,30 @@ class TwitterArchiveLoaderPlugin extends Plugin implements CrawlerPlugin, Dashbo
 	    				$logger->logDebug("Now have " . count($tweets) . " tweets to process", __CLASS__ . "." . __FUNCTION__);
 	    				$post_dao = DAOFactory::getDAO('PostDAO');
 	    				$new_username = false;
-	    				$count = 0;
 	    				$forearchcount = 0;
 	    				foreach ($tweets as $tweet) {
+	    					var_dump($tweet);
 	    					$logger->logInfo($tweet['post_id']. " being processed at loop " . $forearchcount, "TwitterArchiveLoaderPlugin");
 	    					$tweet['network'] = 'twitter';
-	    					$forearchcount = $forearchcount + 1;	    				
-	    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);	    					
-	    					if ( $inserted_post_key !== false) {
-	    						$logger->logInfo($tweet['post_id']. " was inserted", __CLASS__ . "." . __FUNCTION__);
-	    						$count = $count + 1;
-	    						$this->instance->total_posts_in_system = $this->instance->total_posts_in_system + 1;
-	    						//expand and insert links contained in tweet
-	    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter', $logger);
+	    					// check if the tweet belongs to the instance user, that is; the id on the tweet is the same as the instance id
+	    					if ($tweet['user_id'] == $instance->network_user_id) {
+		    					$forearchcount = $forearchcount + 1;	    				
+		    					$inserted_post_key = $post_dao->addPost($tweet, $this->user, $this->logger);	    					
+		    					if ( $inserted_post_key !== false) {
+		    						$logger->logInfo($tweet['post_id']. " was inserted", __CLASS__ . "." . __FUNCTION__);
+		    						$this->instance->total_posts_in_system = $this->instance->total_posts_in_system + 1;
+		    						//expand and insert links contained in tweet
+		    						URLProcessor::processPostURLs($tweet['post_text'], $tweet['post_id'], 'twitter', $logger);
+		    					}
+		    					if ($tweet['post_id'] > $this->instance->last_post_id) {
+		    						$logger->logInfo($tweet['post_id']. " has become the last_post_id", __CLASS__ . "." . __FUNCTION__);
+		    						$this->instance->last_post_id = $tweet['post_id'];
+		    					}
 	    					}
-	    					if ($tweet['post_id'] > $this->instance->last_post_id) {
-	    						$logger->logInfo($tweet['post_id']. " has become the last_post_id", __CLASS__ . "." . __FUNCTION__);
-	    						$this->instance->last_post_id = $tweet['post_id'];
+	    					else {
+	    						$logger->logInfo("This tweet doesn't belong to this user " . $tweet['post_id'], __CLASS__ . "." . __FUNCTION__);
 	    					}
 	    				}
-	    				$logger->logDebug("Count tweets is: " . count($tweets) . " and count is: " . $count, __CLASS__ . "." . __FUNCTION__);
-	    				if (count($tweets) > 0 || $count > 0) {
-	    					$status_message .= ' ' . count($tweets)." tweet(s) found and $count saved";
-	    					$logger->logUserSuccess($status_message, __METHOD__.','.__LINE__);
-	    					$status_message = "";
-	    				}	
 	    				$crawler->setLastTweetsFileProcessedStatus(true);
 	    			}
     			}
