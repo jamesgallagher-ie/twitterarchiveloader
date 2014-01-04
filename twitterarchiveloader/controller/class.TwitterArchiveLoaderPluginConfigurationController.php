@@ -62,7 +62,6 @@ class TwitterArchiveLoaderPluginConfigurationController extends PluginConfigurat
         $this->addToView('is_configured', $plugin->isConfigured());
         try {
         	if (isset($_FILES['tweet_archive'])) {
-        		self::mutexLock();
         		/* upload tweet_archive file */
         		if ($_FILES['tweet_archive']['error']) {
         			if ($_FILES['tweet_archive']['error'] == UPLOAD_ERR_INI_SIZE) {
@@ -71,13 +70,15 @@ class TwitterArchiveLoaderPluginConfigurationController extends PluginConfigurat
         			} else if ($_FILES['tweet_archive']['error'] == UPLOAD_ERR_NO_FILE) {
         				throw new Exception("No file uploaded. Please select a Twitter Archive file to upload");
         			} else {
-        				throw new Exception("Twitter Archive file upload failed.");
+        				echo "Fail! <br/>";
+        				throw new Exception("Twitter Archive file upload failed (" . "error code: " . $_FILES['tweet_archive']['error'] . ")" );
         			}
-        		} else {
+        		} 
+        		else {
         			// get the twitter user from the form
         			if ($_POST['twitter_username']) {
 	        			// store the file
-	        			$path_for_archive = $twitterArchiveDataDir . $_POST['twitter_username'];
+	        			$path_for_archive = $twitterArchiveDataDir . DIRECTORY_SEPARATOR . $_POST['twitter_username'] . DIRECTORY_SEPARATOR;
 	        			$path_for_file = $path_for_archive . basename($_FILES['tweet_archive']['name']);
 	        			if (!file_exists($path_for_archive)) {
 	        				mkdir($path_for_archive, 0777, true);
@@ -87,13 +88,13 @@ class TwitterArchiveLoaderPluginConfigurationController extends PluginConfigurat
 	        				$this->addSuccessMessage("Data Import Successfull!");
 	        				return $this->generateView();
 	        			} else {
-	        				throw new Exception("Twitter Archive file storage failed.");
+	        				throw new Exception("Twitter Archive storage failed while moving into place" );
 	        			}
         			} else {
-        				throw new Exception("Twitter Archive file storage failed.");
+        				throw new Exception("Error with post data" . var_dump($_POST));
         			}
         		}
-        		self::mutexLock(true);
+
         	} else {
         		/* load default form */
         		return $this->generateView();
@@ -102,8 +103,7 @@ class TwitterArchiveLoaderPluginConfigurationController extends PluginConfigurat
             $this->addErrorMessage($e->getMessage());
             return $this->generateView();
         }
-
-        //return $this->generateView();
+        return $this->generateView();
     }
 
     public function saveAccessTokens() {
