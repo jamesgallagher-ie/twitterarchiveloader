@@ -32,17 +32,16 @@
 			<h5>{$i->total_posts_in_system}</h5>
 		</td>
 		<td>
-			 <form name="{$i->network_username|regex_replace:"/@/":""}_tweet_archive-form" id="{$i->network_username|regex_replace:"/@/":""}_tweet_archive-form" class="form-horizontal" method="post" enctype="multipart/form-data" action="{$site_root_path}plugins/twitterarchiveloader/archive-uploader.php">                 
-                    <div style="margin-top: 12px; margin-bottom: 12px; margin-right: 20px; float: left;">
-                        <input type="file" name="tweet_archive"  id="{$i->network_username|regex_replace:"/@/":""}_tweet_archive" />
-						<input type="hidden" name="twitter_username" id="{$i->network_username|regex_replace:"/@/":""}">
-                    </div>
-
-                    <div style="margin-top: 12px; margin-bottom: 12px; margin-right: 20px; float: left;">
-                        <input type="submit" id="upload-{$i->network_username|regex_replace:"/@/":""}_tweet_archive-submit" name="Submit" class="btn btn-small btn-disabled" value="Upload">
-                        <span class="icon-2x icon-spinner icon-spin" id="uploading-{$i->network_username|regex_replace:"/@/":""}_tweet_archive-status" style="display: none;"></span>
-                    </div>   
-             </form>
+			 <form name="{$i->network_username|regex_replace:"/@/":""}_tweet_archive-form" id="{$i->network_username|regex_replace:"/@/":""}_tweet_archive-form" class="form-horizontal" method="post" enctype="multipart/form-data" action="{$site_root_path}account/?p=twitterarchiveloader#manage_plugin">
+			 <div style="margin-top: 12px; margin-bottom: 12px; margin-right: 20px; float: left;">
+			 	<input type="file" name="tweet_archive"  id="{$i->network_username|regex_replace:"/@/":""}_tweet_archive" />
+			 	<input type="hidden" name="twitter_username" value="{$i->network_username|regex_replace:"/@/":""}">
+			 </div>
+			 <div style="margin-top: 12px; margin-bottom: 12px; margin-right: 20px; float: left;">
+			 	<input type="submit" id="upload-{$i->network_username|regex_replace:"/@/":""}_tweet_archive-submit" name="Submit" class="btn btn-small btn-disabled" value="Upload">
+			 	<span class="icon-2x icon-spinner icon-spin" id="uploading-{$i->network_username|regex_replace:"/@/":""}_tweet_archive-status" style="display: none;"></span>
+			 </div>
+			 </form>
 		</td>
 	</tr>
 	{/foreach}
