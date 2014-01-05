@@ -52,8 +52,6 @@ class TwitterArchiveLoaderCrawler {
      * @return $1Crawler
      */
     
-    var $classname; 
-    
     public function __construct($instance) {
         $this->instance = $instance;
         $this->logger = Logger::getInstance();
@@ -67,51 +65,50 @@ class TwitterArchiveLoaderCrawler {
     
     
     public function moreData() {
-    	$this->logger->logUserInfo("Checking for moreData " . $instance->network_username." from Twitter Archive Loader.",
-    			__METHOD__.','.__LINE__);
-    	$this->logger->logDebug("moreData with " . count($this->api_accessor->list_of_json_files) . " files", __CLASS__ . "." . __FUNCTION__);
+    	$this->logger->logUserInfo("Checking for moreData for " . $this->instance->network_username, __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
+    	$this->logger->logDebug("moreData with " . count($this->api_accessor->list_of_json_files) . " files", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     	if(count($this->api_accessor->list_of_json_files) > 0) {
     		return true;
     	}
     	else {
+    		$this->logger->logDebug("Calling queryDataForInstance to check if there are files available",__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
 	    	if($this->api_accessor->queryDataForInstance()) {
-	    		$this->logger->logDebug("Calling queryDataForInstance to check if there are files available", __CLASS__ . "." . __FUNCTION__);
     			return true;
     		}
     		else {
-    			$this->logger->logInfo("No more data available", __CLASS__ . "." . __FUNCTION__);
+    			$this->logger->logInfo("No more data available",__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     			return false;
     		}
     	}
     }
     
     public function fetchUserArchiveTweets() {
-    	$this->logger->logDebug("Executing fetchUserTweets", __CLASS__ . "." . __FUNCTION__);
+    	$this->logger->logDebug("Fetching User Archive Tweets ",__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     	$json = array();
     	$filename = $this->api_accessor->list_of_json_files[0];
-    	$this->logger->logDebug("fetchUserTweets with: " . $filename, __CLASS__ . "." . __FUNCTION__);
+    	$this->logger->logDebug("Attempting to load: " . $filename,__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     	if(is_file($filename) && is_readable($filename)) {
     		$filecontents = file_get_contents($filename);
     		preg_match('/\[.*\]/s', $filecontents, $matches);
     		if(count($matches) > 0) {
-    			$this->logger->logDebug("fetchUserTweets with: " . $filename, __CLASS__ . "." . __FUNCTION__);
+    			$this->logger->logDebug("Fetched User Archive Tweets with: " . $filename,__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     			$json = $matches[0];
     			$this->last_tweets_file_processed = $filename;
     			//The following line produces a lot of data in the log, uncomment for greater debug detail.
-    			//$this->logger->logDebug("JSON is " . $json, __CLASS__ . "." . __FUNCTION__);
+    			//$this->logger->logDebug("JSON is " . $json,__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     		}
     	}
     	else {
-
+    		$this->logger->logDebug("Problem finding or reading: " . $filename,__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     	}
     	return $json;
     }
     
     public function setLastTweetsFileProcessedStatus($status) {
-    	$this->logger->logDebug("Executing setLastTweetsFileProcessedStatus", __CLASS__ . "." . __FUNCTION__);
+    	$this->logger->logDebug("Executing setLastTweetsFileProcessedStatus",__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     	if($status) {
     		$this->api_accessor->setFileToProcessed($this->last_tweets_file_processed);
-    		$this->logger->logDebug("Last file processed is: " . $this->last_tweets_file_processed, __CLASS__ . "." . __FUNCTION__);
+    		$this->logger->logDebug("Last file processed is: " . $this->last_tweets_file_processed,__CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     		// now remove this file from the list of json files
     		for($i = 0; $i <= count($this->api_accessor->list_of_json_files); $i++) {
     			if($this->api_accessor->list_of_json_files[$i] == $this->last_tweets_file_processed) {

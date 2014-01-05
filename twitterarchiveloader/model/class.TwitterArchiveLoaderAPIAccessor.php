@@ -37,7 +37,7 @@ class TwitterArchiveLoaderAPIAccessor{
 		$this->instance = $instance;
 		$this->logger = Logger::getInstance();
 		$this->logger->setUsername($instance->network_username);
-		$this->archive_zip_location = Config::getInstance()->getValue('datadir_path') . '/twitterarchiveloader/' . $instance->network_username . '/';
+		$this->archive_zip_location = Config::getInstance()->getValue('datadir_path') . '/twitterarchiveloader/' . $this->instance->network_username . '/';
 		$this->list_of_json_files = array();
 		$this->archive_file_to_process = '';
 	}
@@ -60,12 +60,14 @@ class TwitterArchiveLoaderAPIAccessor{
     		$files = $this->findJSONTweetsFile($this->archive_zip_location . "tweets/");
     		if(count($files) > 0) {
     			$this->list_of_json_files = $files;
+    			$this->logger->logDebug("List of JSON files: " . implode(",", $this->list_of_json_files), __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     			return true;
     		}
     		else {
     			// If there are no eligible files under tweets/ then mark the directory as processed
     			$this->logger->logDebug("Setting tweets/ to processed ", __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     			$this->setFileToProcessed($this->archive_zip_location . "tweets");
+    			return false;
     		}
     	}
     	else {
@@ -73,7 +75,7 @@ class TwitterArchiveLoaderAPIAccessor{
     	}
     	
     	// Looking for a ZIP archive
-    	$zipfiles = glob($this->archive_zip_location."*.zip");
+    	$zipfiles = glob($this->archive_zip_location . "*.zip");
     	if(count($zipfiles) > 0) {
     		$this->logger->logInfo("Found a ZIP archive(s) at: " . $this->archive_zip_location, __CLASS__ . "." . __FUNCTION__ . "." . __LINE__);
     		// deal with the zip files found
