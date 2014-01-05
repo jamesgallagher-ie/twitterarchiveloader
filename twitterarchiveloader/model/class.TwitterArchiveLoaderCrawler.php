@@ -21,7 +21,7 @@
  *
  * TwitterArchiveLoader (name of file)
  *
- * Description of what this class does
+ * Checks if there are more tweets available from the Twitter archive, fetches available tweets from the archive and marks archive files processed
  *
  * Copyright (c) 2013 James Gallagher
  *
@@ -97,7 +97,8 @@ class TwitterArchiveLoaderCrawler {
     			$this->logger->logDebug("fetchUserTweets with: " . $filename, __CLASS__ . "." . __FUNCTION__);
     			$json = $matches[0];
     			$this->last_tweets_file_processed = $filename;
-    			$this->logger->logDebug("JSON is " . $json, __CLASS__ . "." . __FUNCTION__);
+    			//The following line produces a lot of data in the log, uncomment for greater debug detail.
+    			//$this->logger->logDebug("JSON is " . $json, __CLASS__ . "." . __FUNCTION__);
     		}
     	}
     	else {
